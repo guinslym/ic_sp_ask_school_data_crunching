@@ -100,3 +100,4 @@ lh3/
 *.html
 
 .venv/*
+poetry.lock
