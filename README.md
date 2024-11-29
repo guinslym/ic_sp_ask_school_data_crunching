@@ -1,6 +1,9 @@
-# sp_school_data_crunching# SP Ask School Data Crunching
+# ic_sp_school_data_crunching# SP Ask School Data Crunching
 
-A Python package for analyzing LibraryH3lp chat data for Scholars Portal Ask service. This package provides tools for visualizing and analyzing chat patterns, operator workload, and institutional interactions across Ontario universities.
+This is the Information Common of the python package : sp_school_data_crunching
+
+###
+Which is a Python package for analyzing LibraryH3lp chat data for Scholars Portal Ask service. This package provides tools for visualizing and analyzing chat patterns, operator workload, and institutional interactions across Ontario universities.
 
 ## Features
 
@@ -27,9 +30,13 @@ A Python package for analyzing LibraryH3lp chat data for Scholars Portal Ask ser
 
 ## Installation
 
-```bash
-pip install sp-ask-school-data-crunching
-```
+- Clone this repository or Download the zip file
+- In your Windows terminal navigate to this package directory
+- If you are using pip
+  - pip install requirements.txt
+- If you are using Poetry
+  - poetry install #or python -m poetry install
+
 
 ## Dependencies
 
@@ -54,18 +61,6 @@ analyzer = analyze_school(
     end_date="2024-12-31"
 )
 ```
-
-### Advanced Usage
-
-```python
-from sp_ask_school_data_crunching import SchoolChatAnalytics
-
-# Initialize analyzer
-analyzer = SchoolChatAnalytics(
-    school_name="University of Toronto",
-    start_date="2024-01-01",
-    end_date="2024-01-31"
-)
 
 # Generate specific visualizations
 analyzer.create_time_analysis()           # Creates time-based analysis
@@ -138,7 +133,7 @@ If you use this package in your research, please cite:
 ## Support
 
 For support or questions, please:
-1. Open an issue on GitHub
+1. Open an issue on GitHub on the Scholars Portal repo
 2. Contact Scholars Portal support
 3. Check the documentation
 
