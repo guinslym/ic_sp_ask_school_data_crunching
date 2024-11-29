@@ -1,10 +1,4 @@
-.env
-tmp_file/*xlsx
-tmp_file/*html
-tasks.todo
-/dashboard/templates/base/external_links.html
-*.egg*
-exit_survey.csv
+.secrets
 
 # Created by https://www.gitignore.io
 
@@ -92,16 +86,7 @@ target/
 *.pot
 *.pyc
 __pycache__/
-local_settings.py
 
-.env
-env37
-env38
-djangoenv
-poetry.lock
-./poetry.lock
-to_delete/
-tmp_file/*.xlsx
 
 *.xlsx
 *.xlsx*
@@ -113,3 +98,5 @@ lh3/
 .secrets
 
 *.html
+
+.venv/*

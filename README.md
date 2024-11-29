@@ -28,6 +28,8 @@ Which is a Python package for analyzing LibraryH3lp chat data for Scholars Porta
   - Chat duration statistics
   - Correlation analysis
 
+
+
 ## Installation
 
 - Clone this repository or Download the zip file
@@ -37,6 +39,27 @@ Which is a Python package for analyzing LibraryH3lp chat data for Scholars Porta
 - If you are using Poetry
   - poetry install #or python -m poetry install
 
+## Requirements before running the app
+
+- Create a .secrets file at the root of your directory
+- Change the username and password of the .secrets
+
+```bash
+salt=asjdflkajs
+scheme=https
+server=ca.libraryh3lp.com
+timezone=America/Toronto
+version=v2
+username=your_libraryh3lp_admin_username
+password=your_libraryh3lp_admin_password
+```
+
+File structure of .secrets.
+
+```bash
+
+
+```
 
 ## Dependencies
 
