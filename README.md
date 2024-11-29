@@ -54,12 +54,6 @@ username=your_libraryh3lp_admin_username
 password=your_libraryh3lp_admin_password
 ```
 
-File structure of .secrets.
-
-```bash
-
-
-```
 
 ## Dependencies
 
@@ -73,7 +67,7 @@ File structure of .secrets.
 ## Usage
 
 ### Basic Analysis
-
+On your Terminal type `python` or `poetry shell`
 ```python
 from sp_ask_school_data_crunching import analyze_school
 
