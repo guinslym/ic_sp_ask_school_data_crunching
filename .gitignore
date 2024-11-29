@@ -94,7 +94,6 @@ __pycache__/
 sp_ssh*
 *.zip
 
-lh3/
 .secrets
 
 *.html
