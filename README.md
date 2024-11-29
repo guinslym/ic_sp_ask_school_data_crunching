@@ -35,9 +35,9 @@ Which is a Python package for analyzing LibraryH3lp chat data for Scholars Porta
 - Clone this repository or Download the zip file
 - In your Windows terminal navigate to this package directory
 - If you are using pip
-  - pip install requirements.txt
+  - `pip install requirements.txt`
 - If you are using Poetry
-  - poetry install #or python -m poetry install
+  - `poetry install` or `python -m poetry install`
 
 ## Requirements before running the app
 
