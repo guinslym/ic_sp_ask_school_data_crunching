@@ -9,6 +9,8 @@ import lh3.api
 from typing import List, Dict, Any, Tuple
 import numpy as np
 from scipy import stats
+import os
+from pathlib import Path
 from sp_ask_school import (
     find_queues_from_a_school_name,
     get_shortname_by_full_school_name,
@@ -218,10 +220,18 @@ class SchoolChatAnalytics:
         
         return figs
 
-    def generate_html_report(self, output_file: str = None):
+    def generate_html_report(self, output_file: str = None, output_dir: Path = Path('.')):
         """Generate a comprehensive HTML report with all analytics"""
+        output_dir = Path(output_dir) if isinstance(output_dir, str) else output_dir
+
+        # Ensure the output directory exists
+        output_dir.mkdir(parents=True, exist_ok=True)
+
         if output_file is None:
-            output_file = f"{self.school_short_name}_analysis_{self.start_date}_to_{self.end_date}.html"
+            output_file = output_dir / f"{self.school_short_name}_analysis_{self.start_date}_to_{self.end_date}.html"
+        else:
+            # If a custom filename is provided, combine with output_dir
+            output_file = output_dir / output_file
 
         try:
             # Get statistics and visualizations
@@ -301,7 +311,7 @@ class SchoolChatAnalytics:
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write(html_content)
 
-            print(f"Report generated: {output_file}")
+            print(f"Report generated: {output_file.name}")
 
         except Exception as e:
             print(f"Error generating report: {str(e)}")
@@ -317,18 +327,21 @@ class SchoolChatAnalytics:
                 """)
 
 
-    def save_individual_visualizations(self):
+    def save_individual_visualizations(self, output_dir: Path = Path('.')):
         """Save individual visualizations as separate HTML files"""
         school_name = self.school_info['school']['full_name'].replace(' ', '_')
-        base_filename = f"{school_name}_{self.start_date}_to_{self.end_date}"
-        
+        output_dir = Path(output_dir) if isinstance(output_dir, str) else output_dir
+
+        # Ensure the output directory exists
+        output_dir.mkdir(parents=True, exist_ok=True)
+
         # 1. Monthly Histogram
         monthly_counts = (self.df.groupby(self.df['started'].dt.to_period('M'))
                         .size()
                         .reset_index())
         monthly_counts.columns = ['Month', 'Number of Chats']
         monthly_counts['Month'] = monthly_counts['Month'].astype(str)
-        
+
         fig = px.bar(
             monthly_counts,
             x='Month',
@@ -336,20 +349,20 @@ class SchoolChatAnalytics:
             title=f'Monthly Chat Distribution for {self.school_info["school"]["full_name"]}'
         )
         fig.update_layout(xaxis_tickangle=-45)
-        fig.write_html(f"{school_name}_monthly_distribution.html")
+        fig.write_html(output_dir / f"{school_name}_monthly_distribution.html")
 
         # 2. Daily Heatmap
         hourly_by_day = pd.crosstab(self.df['day_of_week'], self.df['hour'])
         days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         hourly_by_day = hourly_by_day.reindex(days_order)
-        
+
         fig = px.imshow(
             hourly_by_day,
             title=f'Chat Activity Heatmap for {self.school_info["school"]["full_name"]}',
             labels=dict(x='Hour of Day', y='Day of Week', color='Number of Chats'),
             aspect='auto'
         )
-        fig.write_html(f"{school_name}_heatmap.html")
+        fig.write_html(output_dir / f"{school_name}_heatmap.html")
 
         # 3. Operator Analysis
         operator_stats = self.df.groupby('operator').agg({
@@ -357,7 +370,7 @@ class SchoolChatAnalytics:
             'duration': 'mean',
             'wait': 'mean'
         }).reset_index()
-        
+
         fig = make_subplots(
             rows=2, cols=1,
             subplot_titles=(
@@ -365,7 +378,7 @@ class SchoolChatAnalytics:
                 'Average Duration by Operator (seconds)'
             )
         )
-        
+
         fig.add_trace(
             go.Bar(
                 x=operator_stats['operator'],
@@ -374,7 +387,7 @@ class SchoolChatAnalytics:
             ),
             row=1, col=1
         )
-        
+
         fig.add_trace(
             go.Bar(
                 x=operator_stats['operator'],
@@ -383,22 +396,22 @@ class SchoolChatAnalytics:
             ),
             row=2, col=1
         )
-        
+
         fig.update_layout(
             height=800,
             title_text=f'Operator Performance Analysis for {self.school_info["school"]["full_name"]}',
             showlegend=True
         )
-        fig.write_html(f"{school_name}_operator_analysis.html")
+        fig.write_html(output_dir / f"{school_name}_operator_analysis.html")
 
         # 4. Seasonal Analysis
         self.df['month_num'] = self.df['started'].dt.month
         self.df['year'] = self.df['started'].dt.year
-        
+
         monthly_trends = self.df.groupby(['year', 'month_num'])['id'].count().reset_index()
-        
+
         fig = go.Figure()
-        
+
         for year in monthly_trends['year'].unique():
             year_data = monthly_trends[monthly_trends['year'] == year]
             fig.add_trace(
@@ -409,7 +422,7 @@ class SchoolChatAnalytics:
                     mode='lines+markers'
                 )
             )
-        
+
         fig.update_layout(
             title=f'Seasonal Chat Patterns by Year for {self.school_info["school"]["full_name"]}',
             xaxis_title='Month',
@@ -421,7 +434,7 @@ class SchoolChatAnalytics:
                 tickvals=list(range(1, 13))
             )
         )
-        fig.write_html(f"{school_name}_seasonal_analysis.html")
+        fig.write_html(output_dir / f"{school_name}_seasonal_analysis.html")
 
         # 5. Create Dashboard
         dashboard = make_subplots(
@@ -436,7 +449,7 @@ class SchoolChatAnalytics:
                 [{"type": "heatmap"}],
                 [{"type": "bar"}]]
         )
-        
+
         # Add all plots to dashboard
         dashboard.add_trace(fig.data[0], row=1, col=1)  # Monthly distribution
         dashboard.add_trace(go.Heatmap(
@@ -449,12 +462,12 @@ class SchoolChatAnalytics:
             x=operator_stats['operator'],
             y=operator_stats['id']
         ), row=3, col=1)
-        
+
         dashboard.update_layout(
             height=1500,
             title_text=f'Chat Analysis Dashboard for {self.school_info["school"]["full_name"]}'
         )
-        dashboard.write_html(f"{school_name}_dashboard.html")
+        dashboard.write_html(output_dir / f"{school_name}_dashboard.html")
 
         print(f"Generated visualization files for {self.school_info['school']['full_name']}:")
         print(f"1. {school_name}_monthly_distribution.html")
@@ -464,9 +477,13 @@ class SchoolChatAnalytics:
         print(f"5. {school_name}_dashboard.html")
 
 
-    def create_time_analysis(self):
+    def create_time_analysis(self, output_dir: Path = Path('.')):
         """Create comprehensive time analysis visualization with four plots"""
         school_name = self.school_info['school']['full_name'].replace(' ', '_')
+        output_dir = Path(output_dir) if isinstance(output_dir, str) else output_dir
+
+        # Ensure the output directory exists
+        output_dir.mkdir(parents=True, exist_ok=True)
         
         # Create figure with subplots
         fig = make_subplots(
@@ -578,12 +595,16 @@ class SchoolChatAnalytics:
         fig.update_yaxes(title_text="Average Wait Time (minutes)", row=2, col=2)
 
         # Save the figure
-        fig.write_html(f"{school_name}_time_analysis.html")
+        fig.write_html(output_dir / f"{school_name}_time_analysis.html")
         print(f"Generated time analysis visualization: {school_name}_time_analysis.html")
 
-    def create_advanced_time_analysis(self):
+    def create_advanced_time_analysis(self, output_dir: Path = Path('.')):
         """Create comprehensive time analysis with additional metrics"""
         school_name = self.school_info['school']['full_name'].replace(' ', '_')
+        output_dir = Path(output_dir) if isinstance(output_dir, str) else output_dir
+
+        # Ensure the output directory exists
+        output_dir.mkdir(parents=True, exist_ok=True)
         
         # Create figure with subplots
         fig = make_subplots(
@@ -749,12 +770,16 @@ class SchoolChatAnalytics:
         fig.update_yaxes(title_text="Abandonment Rate (%)", row=3, col=2)
 
         # Save the figure
-        fig.write_html(f"{school_name}_advanced_time_analysis.html")
+        fig.write_html(output_dir / f"{school_name}_advanced_time_analysis.html")
         print(f"Generated advanced time analysis: {school_name}_advanced_time_analysis.html")
 
-    def analyze_operator_location(self):
+    def analyze_operator_location(self, output_dir: Path = Path('.')):
         """Analyze local vs non-local operator distribution by hour"""
         school_name = self.school_info['school']['full_name'].replace(' ', '_')
+        output_dir = Path(output_dir) if isinstance(output_dir, str) else output_dir
+
+        # Ensure the output directory exists
+        output_dir.mkdir(parents=True, exist_ok=True)
         
         # Add operator location analysis to dataframe
         def is_local_operator(row):
@@ -869,9 +894,9 @@ class SchoolChatAnalytics:
         
         fig.update_yaxes(title_text="Number of Chats", row=1, col=1)
         fig.update_yaxes(title_text="Percentage of Chats", row=2, col=1)
-        
+
         # Save the visualization
-        fig.write_html(f"{school_name}_operator_location_analysis.html")
+        fig.write_html(output_dir / f"{school_name}_operator_location_analysis.html")
         print(f"Generated operator location analysis: {school_name}_operator_location_analysis.html")
         
         # Print summary statistics
@@ -887,10 +912,14 @@ class SchoolChatAnalytics:
         return hourly_stats, hourly_percentages
 
 
-    def generate_chord_diagram(self):
+    def generate_chord_diagram(self, output_dir: Path = Path('.')):
         """Generate chord diagram showing chat flow between schools"""
         try:
             school_name = self.school_info['school']['full_name'].replace(' ', '_')
+            output_dir = Path(output_dir) if isinstance(output_dir, str) else output_dir
+
+            # Ensure the output directory exists
+            output_dir.mkdir(parents=True, exist_ok=True)
             
             # Create flow data
             flow_data = []
@@ -1068,13 +1097,13 @@ class SchoolChatAnalytics:
             </body>
             </html>
             """
-            
+
             # Save the HTML file
-            output_file = f"{school_name}_chord_diagram.html"
+            output_file = output_dir / f"{school_name}_chord_diagram.html"
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write(html_content)
-            
-            print(f"Generated chord diagram: {output_file}")
+
+            print(f"Generated chord diagram: {output_file.name}")
             
             return flow_list
             
@@ -1084,24 +1113,34 @@ class SchoolChatAnalytics:
             traceback.print_exc()
             return None
 def analyze_school(school_name: str, start_date: str, end_date: str, generate_report: bool = True):
-    """Analyze chat data for a specific school with detailed error handling"""
+    """Analyze chat data for a specific school with detailed error handling
+
+    All charts and reports will be saved in a directory named after the school.
+    """
     analyzer = None
     try:
         print("\nInitializing analysis...")
         analyzer = SchoolChatAnalytics(school_name, start_date, end_date)
-        
+
         print(f"\nAnalysis for {analyzer.school_info['school']['full_name']}")
         print("=" * 50)
-        
+
+        # Create directory for school
+        school_dir_name = analyzer.school_info['school']['full_name'].replace(' ', '_')
+        school_dir = Path(school_dir_name)
+        school_dir.mkdir(exist_ok=True, parents=True)
+        print(f"Created directory: {school_dir.name}")
+
         # List of analysis tasks to perform
         analysis_tasks = [
-            ("Generate HTML report", lambda: analyzer.generate_html_report() if generate_report else None),
-            ("Generate visualizations", analyzer.save_individual_visualizations),
-            ("Generate time analysis", analyzer.create_time_analysis),
-            ("Generate advanced time analysis", analyzer.create_advanced_time_analysis),
-            ("Generate chord diagram", analyzer.generate_chord_diagram)
+            ("Generate HTML report", lambda: analyzer.generate_html_report(output_dir=school_dir) if generate_report else None),
+            ("Generate visualizations", lambda: analyzer.save_individual_visualizations(output_dir=school_dir)),
+            ("Generate time analysis", lambda: analyzer.create_time_analysis(output_dir=school_dir)),
+            ("Generate advanced time analysis", lambda: analyzer.create_advanced_time_analysis(output_dir=school_dir)),
+            ("Generate chord diagram", lambda: analyzer.generate_chord_diagram(output_dir=school_dir)),
+            ("Generate operator location analysis", lambda: analyzer.analyze_operator_location(output_dir=school_dir))
         ]
-        
+
         # Execute each analysis task with error handling
         for task_name, task_func in analysis_tasks:
             print(f"\nExecuting: {task_name}")
@@ -1115,9 +1154,10 @@ def analyze_school(school_name: str, start_date: str, end_date: str, generate_re
                 print("\nTraceback:")
                 traceback.print_exc()
                 print("\nContinuing with remaining analyses...\n")
-        
+
+        print(f"\nAll files saved to directory: {school_dir.name}")
         return analyzer
-        
+
     except Exception as e:
         print("\nCritical error during analysis:")
         print(f"Error type: {type(e).__name__}")
